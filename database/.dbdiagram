@@ -1,0 +1,91 @@
+Table appointments {
+  uid varchar [primary key]
+  appointment_date date
+  appointment_number integer
+  patient_uid varchar [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp 
+}
+
+Table appointment_management {
+  uid varchar [primary key]
+  appointment_uid varchar [not null]
+  start_date timestamp
+  end_date timestamp
+  is_canceled boolean [default: false]
+  canceled_at timestamp 
+  canceled_by varchar 
+}
+
+Table patients {
+  uid varchar [primary key]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  birthday date [not null]
+  sex sex_type [not null]
+  phone_number varchar [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+}
+
+Table patient_details {
+  uid varchar [primary key]
+  patient_uid varchar [not null]
+  email string
+  diagnose text
+  diagnose_date timestamp 
+  social_network text 
+}
+
+Table patient_social_networks {
+  uid varchar [primary key]
+  patient_uid varchar [not null]
+  social_network varchar [not null]
+  profile_url text
+}
+
+Table patient_diagnoses {
+  uid varchar [primary key]
+  patient_uid varchar [not null]
+  diagnose text [not null]
+  comment text
+  diagnose_date timestamp [not null]
+}
+
+Table users {
+  uid varchar [primary key]
+  username varchar [not null, unique]
+  password_hash varchar [not null]
+  is_admin boolean [default: false]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp 
+}
+
+Table user_details {
+  uid varchar [primary key]
+  user_uid varchar [not null]
+}
+
+Enum sex_type {
+  male
+  female
+  non_binary
+  other
+}
+
+Ref: appointments.uid < appointment_management.appointment_uid [on_delete: cascade, on_update: cascade]
+
+Ref: appointment_management.canceled_by > users.uid [on_delete: set null, on_update: cascade]
+
+Ref: appointments.patient_uid > patients.uid [on_delete: restrict, on_update: cascade]
+
+Ref: patients.uid < patient_details.patient_uid [on_delete: cascade, on_update: cascade]
+
+Ref: users.uid < user_details.user_uid [on_delete: cascade, on_update: cascade]
+
+Ref: patients.uid < patient_social_networks.patient_uid
+
+Ref: patients.uid < patient_diagnoses.patient_uid
