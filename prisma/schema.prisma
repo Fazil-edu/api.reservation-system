@@ -13,8 +13,113 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Appintment {
-  id String @id @default(uuid())
+enum SexType {
+  male
+  female
+  non_binary
+  other
+}
+
+model Appointment {
+  uid               String                 @id @map("uid")
+  appointmentDate   DateTime               @map("appointment_date")
+  appointmentNumber Int                    @map("appointment_number")
+  patientUid        String                 @map("patient_uid")
+  patient           Patient                @relation(fields: [patientUid], references: [uid], onDelete: Restrict, onUpdate: Cascade)
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @default(now()) @map("updated_at")
+  deletedAt         DateTime?              @map("deleted_at")
+  management        AppointmentManagement?
 
   @@map("appointments")
+}
+
+model AppointmentManagement {
+  uid            String      @id @map("uid")
+  appointmentUid String      @unique @map("appointment_uid") // ✅ One-to-one fix
+  appointment    Appointment @relation(fields: [appointmentUid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  startDate      DateTime    @map("start_date")
+  endDate        DateTime    @map("end_date")
+  isCanceled     Boolean     @default(false) @map("is_canceled")
+  canceledAt     DateTime?   @map("canceled_at")
+  canceledBy     String?     @map("canceled_by")
+  canceledByUser User?       @relation(name: "CanceledByUser", fields: [canceledBy], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+  userUid        String?     @map("user_uid")
+  user           User?       @relation(name: "ManagedByUser", fields: [userUid], references: [uid], onDelete: SetNull, onUpdate: Cascade)
+
+  @@map("appointment_management")
+}
+
+model Patient {
+  uid            String                 @id @map("uid")
+  firstName      String                 @map("first_name")
+  lastName       String                 @map("last_name")
+  birthday       DateTime               @map("birthday")
+  sex            SexType                @map("sex")
+  phoneNumber    String                 @map("phone_number")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @default(now()) @map("updated_at")
+  deletedAt      DateTime?              @map("deleted_at")
+  appointments   Appointment[]
+  details        PatientDetails?
+  socialNetworks PatientSocialNetwork[]
+  diagnoses      PatientDiagnosis[]
+
+  @@map("patients")
+}
+
+model PatientDetails {
+  uid           String    @id @map("uid")
+  patientUid    String    @unique @map("patient_uid")
+  patient       Patient   @relation(fields: [patientUid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  email         String?
+  diagnose      String?
+  diagnoseDate  DateTime? @map("diagnose_date")
+  socialNetwork String?   @map("social_network")
+
+  @@map("patient_details")
+}
+
+model PatientSocialNetwork {
+  uid           String  @id @map("uid")
+  patientUid    String  @map("patient_uid")
+  patient       Patient @relation(fields: [patientUid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  socialNetwork String  @map("social_network")
+  profileUrl    String? @map("profile_url")
+
+  @@map("patient_social_networks")
+}
+
+model PatientDiagnosis {
+  uid          String   @id @map("uid")
+  patientUid   String   @map("patient_uid")
+  patient      Patient  @relation(fields: [patientUid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  diagnose     String
+  comment      String?
+  diagnoseDate DateTime @map("diagnose_date")
+
+  @@map("patient_diagnoses")
+}
+
+model User {
+  uid                  String                  @id @map("uid")
+  username             String                  @unique @map("username")
+  passwordHash         String                  @map("password_hash")
+  isAdmin              Boolean                 @default(false) @map("is_admin")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @default(now()) @map("updated_at")
+  deletedAt            DateTime?               @map("deleted_at")
+  canceledAppointments AppointmentManagement[] @relation("CanceledByUser")
+  managedAppointments  AppointmentManagement[] @relation("ManagedByUser")
+  details              UserDetails?
+
+  @@map("users")
+}
+
+model UserDetails {
+  uid     String @id @map("uid")
+  userUid String @unique @map("user_uid")
+  user    User   @relation(fields: [userUid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("user_details")
 }
