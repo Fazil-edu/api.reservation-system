@@ -15,11 +15,11 @@ This is a NestJS-based application that manages appointments. The application us
 
 ├── src/
 │ └── appointment/
-│ ├── appointment.controller.ts # HTTP request handlers
-│ ├── appointment.service.ts # Business logic
-│ ├── appointment.module.ts # Module configuration
-│ └── dto/
-│ └── create-appointment.dto.ts # Data Transfer Object
+   │ ├── appointment.controller.ts # HTTP request handlers
+   │ ├── appointment.service.ts # Business logic
+   │ ├── appointment.module.ts # Module configuration
+   │ └── dto/
+   │  └── create-appointment.dto.ts # Data Transfer Object
 ├── prisma/
 │ └── schema.prisma # Database schema definition
 
