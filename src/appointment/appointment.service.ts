@@ -1,10 +1,47 @@
 import { Injectable } from '@nestjs/common';
-import { from } from 'rxjs';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { AppointmentDto } from './dto/create-appointment.dto';
+import { from, map, switchMap } from 'rxjs';
 
 @Injectable()
 export class AppointmentService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
+
+  public createAppointment(appointmentDto: AppointmentDto) {
+    return from(
+      this.prisma.patient.upsert({
+        where: { phoneNumber: appointmentDto.phoneNumber },
+        create: {
+          firstName: appointmentDto.firstName,
+          lastName: appointmentDto.lastName,
+          phoneNumber: appointmentDto.phoneNumber,
+          sex: appointmentDto.sex,
+        },
+        update: {
+          firstName: appointmentDto.firstName,
+          lastName: appointmentDto.lastName,
+          sex: appointmentDto.sex,
+        },
+      }),
+    ).pipe(
+      switchMap((patient) =>
+        from(
+          this.prisma.appointment.create({
+            data: {
+              appointmentDate: appointmentDto.appointmentDate,
+              patientUid: patient.uid,
+              appointmentNumber: Math.floor(Math.random() * 1000000),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            include: {
+              patient: true,
+            },
+          }),
+        ),
+      ),
+    );
+  }
 
   public getTodayAppointmentSummary() {
     const today = new Date();
@@ -12,7 +49,7 @@ export class AppointmentService {
     const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999)); // End of the day
 
     return from(
-      this.prismaService.appointment.findMany({
+      this.prisma.appointment.findMany({
         where: {
           appointmentDate: {
             gte: startOfDay.toISOString(), // Greater than or equal to start of day
@@ -20,6 +57,8 @@ export class AppointmentService {
           },
         },
       }),
+    ).pipe(
+      map((appointments) => ({ count: appointments.length, currentNumber: 0 })),
     );
   }
 }

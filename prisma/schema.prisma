@@ -21,13 +21,13 @@ enum SexType {
 }
 
 model Appointment {
-  uid               String                 @id @map("uid")
-  appointmentDate   DateTime               @map("appointment_date")
+  id                String                 @id @default(uuid())
+  appointmentDate   DateTime
+  patient           Patient                @relation(fields: [patientUid], references: [uid])
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
   appointmentNumber Int                    @map("appointment_number")
   patientUid        String                 @map("patient_uid")
-  patient           Patient                @relation(fields: [patientUid], references: [uid], onDelete: Restrict, onUpdate: Cascade)
-  createdAt         DateTime               @default(now()) @map("created_at")
-  updatedAt         DateTime               @default(now()) @map("updated_at")
   deletedAt         DateTime?              @map("deleted_at")
   management        AppointmentManagement?
 
@@ -37,7 +37,7 @@ model Appointment {
 model AppointmentManagement {
   uid            String      @id @map("uid")
   appointmentUid String      @unique @map("appointment_uid") // ✅ One-to-one fix
-  appointment    Appointment @relation(fields: [appointmentUid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  appointment    Appointment @relation(fields: [appointmentUid], references: [id], onDelete: Cascade, onUpdate: Cascade)
   startDate      DateTime    @map("start_date")
   endDate        DateTime    @map("end_date")
   isCanceled     Boolean     @default(false) @map("is_canceled")
@@ -51,14 +51,14 @@ model AppointmentManagement {
 }
 
 model Patient {
-  uid            String                 @id @map("uid")
-  firstName      String                 @map("first_name")
-  lastName       String                 @map("last_name")
-  birthday       DateTime               @map("birthday")
-  sex            SexType                @map("sex")
-  phoneNumber    String                 @map("phone_number")
-  createdAt      DateTime               @default(now()) @map("created_at")
-  updatedAt      DateTime               @default(now()) @map("updated_at")
+  uid            String                 @id @default(uuid())
+  firstName      String
+  lastName       String
+  birthday       DateTime?              @map("birthday")
+  sex            String
+  phoneNumber    String                 @unique
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
   deletedAt      DateTime?              @map("deleted_at")
   appointments   Appointment[]
   details        PatientDetails?
@@ -69,9 +69,9 @@ model Patient {
 }
 
 model PatientDetails {
-  uid           String    @id @map("uid")
-  patientUid    String    @unique @map("patient_uid")
-  patient       Patient   @relation(fields: [patientUid], references: [uid], onDelete: Cascade, onUpdate: Cascade)
+  uid           String    @id @default(uuid())
+  patientUid    String    @unique
+  patient       Patient   @relation(fields: [patientUid], references: [uid])
   email         String?
   diagnose      String?
   diagnoseDate  DateTime? @map("diagnose_date")
