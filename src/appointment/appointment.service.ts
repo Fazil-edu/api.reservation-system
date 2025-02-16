@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AppointmentDto } from './dto/create-appointment.dto';
+import { AppointmentDto, CreateTimeSlotDto, UpdateTimeSlotDto } from './dto';
 
 @Injectable()
 export class AppointmentService {
@@ -101,6 +101,60 @@ export class AppointmentService {
       throw new InternalServerErrorException(
         'Failed to get appointment summary: ' + error,
       );
+    }
+  }
+
+  public async createTimeSlot(createTimeSlotDto: CreateTimeSlotDto) {
+    try {
+      const timeSlot = await this.prisma.appointmentTimeSlot.create({
+        data: {
+          appointmentHour: createTimeSlotDto.appointmentHour,
+          appointmentOrder: createTimeSlotDto.appointmentOrder,
+        },
+      });
+
+      return {
+        success: true,
+        appointmentHour: timeSlot.appointmentHour,
+        appointmentOrder: timeSlot.appointmentOrder,
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to create time slot: ' + error);
+    }
+  }
+
+  public async updateTimeSlot(
+    updateTimeSlotDto: UpdateTimeSlotDto,
+    uid: string,
+  ) {
+    try {
+      const timeSlot = await this.prisma.appointmentTimeSlot.update({
+        where: { uid },
+        data: {
+          appointmentHour: updateTimeSlotDto.appointmentHour,
+          appointmentOrder: updateTimeSlotDto.appointmentOrder,
+        },
+      });
+
+      return {
+        success: true,
+        appointmentHour: timeSlot.appointmentHour,
+        appointmentOrder: timeSlot.appointmentOrder,
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to update time slot: ' + error);
+    }
+  }
+
+  public async deleteTimeSlot(uid: string) {
+    try {
+      await this.prisma.appointmentTimeSlot.delete({ where: { uid } });
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to delete time slot: ' + error);
     }
   }
 }
