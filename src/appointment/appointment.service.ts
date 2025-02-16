@@ -1,15 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppointmentDto } from './dto/create-appointment.dto';
-import { from, map, switchMap } from 'rxjs';
 
 @Injectable()
 export class AppointmentService {
   constructor(private prisma: PrismaService) {}
 
-  public createAppointment(appointmentDto: AppointmentDto) {
-    return from(
-      this.prisma.patient.upsert({
+  public async createAppointment(appointmentDto: AppointmentDto) {
+    try {
+      const patient = await this.prisma.patient.upsert({
         where: { phoneNumber: appointmentDto.phoneNumber },
         create: {
           firstName: appointmentDto.firstName,
@@ -22,43 +21,48 @@ export class AppointmentService {
           lastName: appointmentDto.lastName,
           sex: appointmentDto.sex,
         },
-      }),
-    ).pipe(
-      switchMap((patient) =>
-        from(
-          this.prisma.appointment.create({
-            data: {
-              appointmentDate: appointmentDto.appointmentDate,
-              patientUid: patient.uid,
-              appointmentNumber: Math.floor(Math.random() * 1000000),
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-            include: {
-              patient: true,
-            },
-          }),
-        ),
-      ),
-    );
+      });
+
+      const appointment = await this.prisma.appointment.create({
+        data: {
+          appointmentDate: appointmentDto.appointmentDate,
+          patientUid: patient.uid,
+          appointmentNumber: Math.floor(Math.random() * 1000000),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        appointmentNumber: appointment.appointmentNumber,
+        appointmentDate: appointment.appointmentDate,
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to create appointment: ' + error);
+    }
   }
 
-  public getTodayAppointmentSummary() {
-    const today = new Date();
-    const startOfDay = new Date(today.setUTCHours(0, 0, 0, 0)); // Start of the day
-    const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999)); // End of the day
+  public async getTodayAppointmentSummary() {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today.setUTCHours(0, 0, 0, 0));
+      const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999));
 
-    return from(
-      this.prisma.appointment.findMany({
+      const appointments = await this.prisma.appointment.findMany({
         where: {
           appointmentDate: {
-            gte: startOfDay.toISOString(), // Greater than or equal to start of day
-            lt: endOfDay.toISOString(), // Less than end of day
+            gte: startOfDay.toISOString(),
+            lt: endOfDay.toISOString(),
           },
         },
-      }),
-    ).pipe(
-      map((appointments) => ({ count: appointments.length, currentNumber: 0 })),
-    );
+      });
+
+      return { count: appointments.length, currentNumber: 0 };
+    } catch (error) {
+      throw new BadRequestException(
+        'Failed to get appointment summary: ' + error,
+      );
+    }
   }
 }
