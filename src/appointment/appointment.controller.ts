@@ -6,6 +6,7 @@ import {
   Put,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/create-appointment.dto';
@@ -19,6 +20,11 @@ export class AppointmentController {
   @Get('count-for-today')
   public getTodayAppointmentSummary() {
     return this.appointmentService.getTodayAppointmentSummary();
+  }
+
+  @Get('get-available-time-slots')
+  public async getAvailableTimeSlots(@Query('date') date: string) {
+    return await this.appointmentService.getAvailableTimeSlots(date);
   }
 
   @Post('create')

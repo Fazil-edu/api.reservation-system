@@ -30,8 +30,8 @@ model Appointment {
   patientUid             String                 @map("patient_uid")
   deletedAt              DateTime?              @map("deleted_at")
   management             AppointmentManagement?
-  timeSlot               AppointmentTimeSlot?   @relation(fields: [appointmentTimeSlotUid], references: [uid])
-  appointmentTimeSlotUid String?
+  timeSlot               AppointmentTimeSlot    @relation(fields: [appointmentTimeSlotUid], references: [uid])
+  appointmentTimeSlotUid String
 
   @@map("appointments")
 }

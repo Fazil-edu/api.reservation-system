@@ -34,6 +34,7 @@ export class AppointmentService {
           appointmentNumber: Math.floor(Math.random() * 1000000),
           createdAt: new Date(),
           updatedAt: new Date(),
+          appointmentTimeSlotUid: appointmentDto.appointmentTimeSlotUid,
         },
       });
 
@@ -82,24 +83,75 @@ export class AppointmentService {
         },
         include: {
           management: true,
+          timeSlot: true,
         },
       });
 
       const totalAppointments = appointments.length;
+
+      // Find completed appointments (where startDate exists but endDate does not)
       const completedAppointments = appointments.filter(
         (appointment) =>
-          appointment.management?.startDate &&
-          appointment.management?.endDate &&
-          !appointment.management?.isCanceled,
+          appointment.management?.startDate && !appointment.management?.endDate,
       ).length;
+
+      // Find the current appointment order number (if exists)
+      const currentAppointment = appointments.find(
+        (appointment) =>
+          appointment.management?.startDate && !appointment.management?.endDate,
+      );
+      const currentAppointmentOrder =
+        currentAppointment?.timeSlot?.appointmentOrder;
 
       return {
         totalAppointments,
         completedAppointments,
+        currentAppointmentOrder,
       };
     } catch (error) {
       throw new InternalServerErrorException(
         'Failed to get appointment summary: ' + error,
+      );
+    }
+  }
+
+  public async getAvailableTimeSlots(date: string) {
+    try {
+      const formattedDate = new Date(date);
+
+      const bookedTimeSlots = await this.prisma.appointment.findMany({
+        where: {
+          appointmentDate: formattedDate,
+          deletedAt: null,
+        },
+        select: {
+          appointmentTimeSlotUid: true,
+        },
+      });
+
+      // Extract the UIDs of booked time slots
+      const bookedSlotUids = bookedTimeSlots
+        .map((slot) => slot.appointmentTimeSlotUid)
+        .filter((uid) => uid !== null);
+
+      // Fetch all time slots that are NOT in the booked slots list
+      const availableTimeSlots = await this.prisma.appointmentTimeSlot.findMany(
+        {
+          where: {
+            NOT: {
+              uid: { in: bookedSlotUids },
+            },
+          },
+        },
+      );
+
+      return {
+        success: true,
+        availableTimeSlots,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to get available time slots: ${error}`,
       );
     }
   }
