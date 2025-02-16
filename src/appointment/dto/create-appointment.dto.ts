@@ -31,4 +31,8 @@ export class AppointmentDto {
   @IsNotEmpty()
   @IsEnum(Gender)
   sex: Gender;
+
+  @IsNotEmpty()
+  @IsString()
+  appointmentTimeSlotUid: string;
 }
