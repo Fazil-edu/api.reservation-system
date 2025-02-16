@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppointmentDto } from './dto/create-appointment.dto';
 
@@ -46,8 +50,28 @@ export class AppointmentService {
   public async getTodayAppointmentSummary() {
     try {
       const today = new Date();
-      const startOfDay = new Date(today.setUTCHours(0, 0, 0, 0));
-      const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999));
+      const startOfDay = new Date(
+        Date.UTC(
+          today.getUTCFullYear(),
+          today.getUTCMonth(),
+          today.getUTCDate(),
+          0,
+          0,
+          0,
+          0,
+        ),
+      );
+      const endOfDay = new Date(
+        Date.UTC(
+          today.getUTCFullYear(),
+          today.getUTCMonth(),
+          today.getUTCDate(),
+          23,
+          59,
+          59,
+          999,
+        ),
+      );
 
       const appointments = await this.prisma.appointment.findMany({
         where: {
@@ -56,11 +80,25 @@ export class AppointmentService {
             lt: endOfDay.toISOString(),
           },
         },
+        include: {
+          management: true,
+        },
       });
 
-      return { count: appointments.length, currentNumber: 0 };
+      const totalAppointments = appointments.length;
+      const completedAppointments = appointments.filter(
+        (appointment) =>
+          appointment.management?.startDate &&
+          appointment.management?.endDate &&
+          !appointment.management?.isCanceled,
+      ).length;
+
+      return {
+        totalAppointments,
+        completedAppointments,
+      };
     } catch (error) {
-      throw new BadRequestException(
+      throw new InternalServerErrorException(
         'Failed to get appointment summary: ' + error,
       );
     }

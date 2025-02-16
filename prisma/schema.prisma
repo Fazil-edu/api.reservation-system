@@ -38,8 +38,8 @@ model AppointmentManagement {
   uid            String      @id @map("uid")
   appointmentUid String      @unique @map("appointment_uid") // ✅ One-to-one fix
   appointment    Appointment @relation(fields: [appointmentUid], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  startDate      DateTime    @map("start_date")
-  endDate        DateTime    @map("end_date")
+  startDate      DateTime?   @map("start_date")
+  endDate        DateTime?   @map("end_date")
   isCanceled     Boolean     @default(false) @map("is_canceled")
   canceledAt     DateTime?   @map("canceled_at")
   canceledBy     String?     @map("canceled_by")
