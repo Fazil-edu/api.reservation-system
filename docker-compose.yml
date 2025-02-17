@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - '3011:3000'
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    restart: always
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./.env:/app/.env # Mount .env file explicitly
