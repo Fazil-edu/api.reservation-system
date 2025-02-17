@@ -1,41 +1,38 @@
-# Stage 1: Build the application
+# Build stage
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json
 COPY package*.json ./
 COPY prisma ./prisma/
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application code
-COPY . .
-
-# Copy .env file
 COPY .env ./
 
-# Generate Prisma client
+# Install all dependencies (including dev dependencies) for building
+RUN npm cache clean --force && \
+    npm ci && \
+    npm cache clean --force
+
+COPY . .
+
 RUN npx prisma generate
 
-# Build the application
 RUN npm run build
 
-
-# Stage 2: Create the production image
+# Production stage
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy necessary files from the builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/.env ./
 
-# Expose the port the app runs on
+# Install only production dependencies
+RUN npm install --only=production && \
+    npm cache clean --force && \
+    rm -rf /tmp/*
+
 EXPOSE 3000
-
-# Command to run the application
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main.js"]

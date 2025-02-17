@@ -1,16 +1,16 @@
 version: '3.8'
 
 services:
-  api:
+  app:
+    container_name: registration-system
     build: .
     ports:
       - '3011:3000'
     env_file:
-      - .env
+      - .env # Loads environment variables
+    volumes:
+      - .:/app # Mounts the current directory to the container for live code updates
+      - /app/node_modules # Prevents overwriting node_modules from host
+    restart: always # Ensures the container restarts on failure
     environment:
       - NODE_ENV=production
-    restart: always
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - ./.env:/app/.env # Mount .env file explicitly
