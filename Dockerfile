@@ -17,7 +17,7 @@ COPY . .
 COPY .env ./
 
 # Generate Prisma client
-RUN npx prisma push
+RUN npx prisma generate
 
 # Build the application
 RUN npm run build
