@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppointmentDto, CreateTimeSlotDto, UpdateTimeSlotDto } from './dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class AppointmentService {
@@ -29,7 +30,7 @@ export class AppointmentService {
 
       const appointment = await this.prisma.appointment.create({
         data: {
-          appointmentDate: appointmentDto.appointmentDate,
+          appointmentDate: new Date(appointmentDto.appointmentDate),
           patientUid: patient.uid,
           appointmentNumber: Math.floor(Math.random() * 1000000),
           createdAt: new Date(),
@@ -43,8 +44,15 @@ export class AppointmentService {
         appointmentNumber: appointment.appointmentNumber,
         appointmentDate: appointment.appointmentDate,
       };
-    } catch (error) {
-      throw new BadRequestException('Failed to create appointment: ' + error);
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError) {
+        if (e.code === 'P2002') {
+          throw new BadRequestException(
+            'An appointment already exists for this date and time slot.',
+          );
+        }
+      }
+      throw new BadRequestException('Failed to create appointment.');
     }
   }
 
@@ -106,7 +114,7 @@ export class AppointmentService {
       return {
         totalAppointments,
         completedAppointments,
-        currentAppointmentOrder,
+        currentAppointmentOrder: currentAppointmentOrder ?? 0,
       };
     } catch (error) {
       throw new InternalServerErrorException(

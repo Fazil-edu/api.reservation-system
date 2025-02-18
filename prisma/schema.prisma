@@ -22,7 +22,7 @@ enum SexType {
 
 model Appointment {
   id                     String                 @id @default(uuid())
-  appointmentDate        DateTime
+  appointmentDate        DateTime               @map("appointment_date") @db.Date()
   patient                Patient                @relation(fields: [patientUid], references: [uid])
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
@@ -33,6 +33,7 @@ model Appointment {
   timeSlot               AppointmentTimeSlot    @relation(fields: [appointmentTimeSlotUid], references: [uid])
   appointmentTimeSlotUid String
 
+  @@unique([appointmentDate, patientUid, appointmentTimeSlotUid])
   @@map("appointments")
 }
 
