@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppointmentDto, CreateTimeSlotDto, UpdateTimeSlotDto } from './dto';
@@ -117,15 +118,30 @@ export class AppointmentService {
         currentAppointmentOrder: currentAppointmentOrder ?? 0,
       };
     } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          'Database error while fetching appointments.',
+        );
+      }
       throw new InternalServerErrorException(
-        'Failed to get appointment summary: ' + error,
+        'Failed to get appointment summary.',
       );
     }
   }
 
   public async getAvailableTimeSlots(date: string) {
     try {
+      if (!date) {
+        throw new BadRequestException('Date parameter is required.');
+      }
+
       const formattedDate = new Date(date);
+
+      if (isNaN(formattedDate.getTime())) {
+        throw new BadRequestException(
+          'Invalid date format. Please provide a valid date.',
+        );
+      }
 
       const bookedTimeSlots = await this.prisma.appointment.findMany({
         where: {
@@ -158,9 +174,12 @@ export class AppointmentService {
         availableTimeSlots,
       };
     } catch (error) {
-      throw new BadRequestException(
-        `Failed to get available time slots: ${error}`,
-      );
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new BadRequestException(
+          'Database error while fetching available time slots.',
+        );
+      }
+      throw new BadRequestException('Failed to get available time slots.');
     }
   }
 
@@ -179,7 +198,14 @@ export class AppointmentService {
         appointmentOrder: timeSlot.appointmentOrder,
       };
     } catch (error) {
-      throw new BadRequestException('Failed to create time slot: ' + error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new BadRequestException(
+            'A time slot with this order or hour already exists.',
+          );
+        }
+      }
+      throw new BadRequestException('Failed to create time slot.');
     }
   }
 
@@ -202,7 +228,12 @@ export class AppointmentService {
         appointmentOrder: timeSlot.appointmentOrder,
       };
     } catch (error) {
-      throw new BadRequestException('Failed to update time slot: ' + error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException('Time slot not found.');
+        }
+      }
+      throw new BadRequestException('Failed to update time slot.');
     }
   }
 
@@ -214,7 +245,12 @@ export class AppointmentService {
         success: true,
       };
     } catch (error) {
-      throw new BadRequestException('Failed to delete time slot: ' + error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException('Time slot not found.');
+        }
+      }
+      throw new BadRequestException('Failed to delete time slot.');
     }
   }
 }
