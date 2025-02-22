@@ -273,7 +273,7 @@ export class AppointmentService {
         throw new NotFoundException('Patient not found');
       }
 
-      const appointment = await this.prisma.appointment.findFirst({
+      const appointment = await this.prisma.appointment.findMany({
         where: {
           patientUid: patientRecord.uid,
           deletedAt: null,
@@ -287,12 +287,12 @@ export class AppointmentService {
         },
       });
 
-      return {
-        success: true,
-        appointmentDate: appointment?.appointmentDate,
-        appointmentNumber: appointment?.appointmentNumber,
-        appointmentTimeSlotUid: appointment?.appointmentTimeSlotUid,
-      };
+      return appointment.map((appointment) => ({
+        appointmentNumber: appointment.appointmentNumber,
+        appointmentDate: appointment.appointmentDate,
+        appointmentTimeSlot: appointment.timeSlot?.appointmentHour,
+        id: appointment.id,
+      }));
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -307,6 +307,10 @@ export class AppointmentService {
   public async deleteAppointment(id: string) {
     try {
       await this.prisma.appointment.delete({ where: { id } });
+
+      return {
+        success: true,
+      };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         throw new BadRequestException('Failed to delete appointment.');

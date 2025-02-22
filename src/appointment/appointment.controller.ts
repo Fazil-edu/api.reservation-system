@@ -53,7 +53,7 @@ export class AppointmentController {
     return await this.appointmentService.deleteTimeSlot(uid);
   }
 
-  @Get('by-patient')
+  @Post('by-patient')
   public async getAppointmentByPatient(@Body() patient: PatientDto) {
     return await this.appointmentService.getAppointmentByPatient(patient);
   }
