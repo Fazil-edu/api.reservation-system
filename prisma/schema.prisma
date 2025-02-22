@@ -78,6 +78,7 @@ model Patient {
   socialNetworks PatientSocialNetwork[]
   diagnoses      PatientDiagnosis[]
 
+  @@unique([firstName, lastName, phoneNumber, sex])
   @@map("patients")
 }
 

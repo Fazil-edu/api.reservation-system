@@ -5,7 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AppointmentDto, CreateTimeSlotDto, UpdateTimeSlotDto } from './dto';
+import {
+  AppointmentDto,
+  CreateTimeSlotDto,
+  PatientDto,
+  UpdateTimeSlotDto,
+} from './dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -251,6 +256,62 @@ export class AppointmentService {
         }
       }
       throw new BadRequestException('Failed to delete time slot.');
+    }
+  }
+
+  public async getAppointmentByPatient(patient: PatientDto) {
+    try {
+      const patientRecord = await this.prisma.patient.findFirst({
+        where: {
+          phoneNumber: patient.phoneNumber,
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+        },
+      });
+
+      if (!patientRecord) {
+        throw new NotFoundException('Patient not found');
+      }
+
+      const appointment = await this.prisma.appointment.findFirst({
+        where: {
+          patientUid: patientRecord.uid,
+          deletedAt: null,
+        },
+        include: {
+          timeSlot: true,
+          patient: true,
+        },
+        orderBy: {
+          appointmentDate: 'desc',
+        },
+      });
+
+      return {
+        success: true,
+        appointmentDate: appointment?.appointmentDate,
+        appointmentNumber: appointment?.appointmentNumber,
+        appointmentTimeSlotUid: appointment?.appointmentTimeSlotUid,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new BadRequestException('Failed to get appointment by patient.');
+      }
+      throw new BadRequestException('Failed to get appointment by patient.');
+    }
+  }
+
+  public async deleteAppointment(id: string) {
+    try {
+      await this.prisma.appointment.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new BadRequestException('Failed to delete appointment.');
+      }
+      throw new BadRequestException('Failed to delete appointment.');
     }
   }
 }

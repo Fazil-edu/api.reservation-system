@@ -12,6 +12,7 @@ import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/create-appointment.dto';
 import { CreateTimeSlotDto } from './dto/create-time-slot.dto';
 import { UpdateTimeSlotDto } from './dto/update-time-slot.dto';
+import { PatientDto } from './dto/patient.dto';
 
 @Controller('appointments')
 export class AppointmentController {
@@ -50,5 +51,15 @@ export class AppointmentController {
   @Delete('delete-time-slot/:uid')
   public async deleteTimeSlot(@Param('uid') uid: string) {
     return await this.appointmentService.deleteTimeSlot(uid);
+  }
+
+  @Get('by-patient')
+  public async getAppointmentByPatient(@Body() patient: PatientDto) {
+    return await this.appointmentService.getAppointmentByPatient(patient);
+  }
+
+  @Delete('delete/:uid')
+  public async deleteAppointment(@Param('uid') uid: string) {
+    return await this.appointmentService.deleteAppointment(uid);
   }
 }
