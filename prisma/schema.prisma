@@ -116,9 +116,8 @@ model PatientDiagnosis {
 }
 
 model User {
-  uid                  String                  @id @map("uid")
+  uid                  String                  @id @default(uuid()) @map("uid")
   username             String                  @unique @map("username")
-  passwordHash         String                  @map("password_hash")
   isAdmin              Boolean                 @default(false) @map("is_admin")
   createdAt            DateTime                @default(now()) @map("created_at")
   updatedAt            DateTime                @default(now()) @map("updated_at")
@@ -126,6 +125,10 @@ model User {
   canceledAppointments AppointmentManagement[] @relation("CanceledByUser")
   managedAppointments  AppointmentManagement[] @relation("ManagedByUser")
   details              UserDetails?
+  email                String                  @unique
+  password             String
+  firstName            String
+  lastName             String
 
   @@map("users")
 }
