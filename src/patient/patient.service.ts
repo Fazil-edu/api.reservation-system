@@ -20,7 +20,11 @@ export class PatientService {
     try {
       const patient = await this.prismaService.patient.findUnique({
         where: { uid: id },
-        include: { appointments: true, details: true },
+        include: {
+          appointments: { include: { timeSlot: true } },
+          diagnoses: true,
+          details: true,
+        },
       });
       if (!patient) {
         throw new Error('Patient not found');

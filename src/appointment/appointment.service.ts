@@ -3,6 +3,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -16,6 +17,24 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 @Injectable()
 export class AppointmentService {
   constructor(private prisma: PrismaService) {}
+
+  public async getTodayAppointments() {
+    try {
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          appointmentDate: new Date(new Date().toISOString().split('T')[0]),
+        },
+        include: {
+          patient: true,
+          timeSlot: true,
+        },
+      });
+      return appointments;
+    } catch (error) {
+      Logger.error('Failed to fetch today appointments', error);
+      throw new InternalServerErrorException('Failed to fetch appointments');
+    }
+  }
 
   public async createAppointment(appointmentDto: AppointmentDto) {
     try {

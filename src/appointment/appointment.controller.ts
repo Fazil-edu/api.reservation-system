@@ -18,6 +18,11 @@ import { PatientDto } from './dto/patient.dto';
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
+  @Get()
+  public async findAll() {
+    return await this.appointmentService.getTodayAppointments();
+  }
+
   @Get('count-for-today')
   public getTodayAppointmentSummary() {
     return this.appointmentService.getTodayAppointmentSummary();
