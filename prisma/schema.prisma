@@ -27,6 +27,7 @@ model Appointment {
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   appointmentNumber      Int                    @map("appointment_number")
+  comment                String?
   patientUid             String                 @map("patient_uid")
   deletedAt              DateTime?              @map("deleted_at")
   management             AppointmentManagement?
@@ -38,7 +39,7 @@ model Appointment {
 }
 
 model AppointmentManagement {
-  uid            String      @id @map("uid")
+  uid            String      @id @default(uuid())
   appointmentUid String      @unique @map("appointment_uid")
   appointment    Appointment @relation(fields: [appointmentUid], references: [id], onDelete: Cascade, onUpdate: Cascade)
   startDate      DateTime?   @map("start_date")
@@ -67,9 +68,9 @@ model Patient {
   uid            String                 @id @default(uuid())
   firstName      String
   lastName       String
-  birthday       DateTime?              @map("birthday")
+  birthday       DateTime?
   sex            String
-  phoneNumber    String                 @unique
+  phoneNumber    String
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   deletedAt      DateTime?              @map("deleted_at")
@@ -116,9 +117,8 @@ model PatientDiagnosis {
 }
 
 model User {
-  uid                  String                  @id @map("uid")
+  uid                  String                  @id @default(uuid()) @map("uid")
   username             String                  @unique @map("username")
-  passwordHash         String                  @map("password_hash")
   isAdmin              Boolean                 @default(false) @map("is_admin")
   createdAt            DateTime                @default(now()) @map("created_at")
   updatedAt            DateTime                @default(now()) @map("updated_at")
@@ -126,6 +126,10 @@ model User {
   canceledAppointments AppointmentManagement[] @relation("CanceledByUser")
   managedAppointments  AppointmentManagement[] @relation("ManagedByUser")
   details              UserDetails?
+  email                String                  @unique
+  password             String
+  firstName            String
+  lastName             String
 
   @@map("users")
 }

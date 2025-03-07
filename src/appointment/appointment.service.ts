@@ -3,10 +3,12 @@ import {
   BadRequestException,
   InternalServerErrorException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AppointmentDto,
+  CallPatientDto,
   CreateTimeSlotDto,
   PatientDto,
   UpdateTimeSlotDto,
@@ -17,22 +19,47 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 export class AppointmentService {
   constructor(private prisma: PrismaService) {}
 
-  public async createAppointment(appointmentDto: AppointmentDto) {
+  public async getTodayAppointments() {
     try {
-      const patient = await this.prisma.patient.upsert({
-        where: { phoneNumber: appointmentDto.phoneNumber },
-        create: {
-          firstName: appointmentDto.firstName,
-          lastName: appointmentDto.lastName,
-          phoneNumber: appointmentDto.phoneNumber,
-          sex: appointmentDto.sex,
+      const appointments = await this.prisma.appointment.findMany({
+        where: {
+          appointmentDate: new Date(new Date().toISOString().split('T')[0]),
         },
-        update: {
-          firstName: appointmentDto.firstName,
-          lastName: appointmentDto.lastName,
-          sex: appointmentDto.sex,
+        include: {
+          patient: true,
+          timeSlot: true,
+          management: true,
         },
       });
+      return appointments;
+    } catch (error) {
+      Logger.error('Failed to fetch today appointments', error);
+      throw new InternalServerErrorException('Failed to fetch appointments');
+    }
+  }
+
+  public async createAppointment(appointmentDto: AppointmentDto) {
+    try {
+      let patient = await this.prisma.patient.findFirst({
+        where: {
+          phoneNumber: appointmentDto.phoneNumber,
+          sex: appointmentDto.sex,
+          firstName: appointmentDto.firstName,
+          lastName: appointmentDto.lastName,
+        },
+      });
+
+      // Create patient if not exists
+      if (!patient) {
+        patient = await this.prisma.patient.create({
+          data: {
+            firstName: appointmentDto.firstName,
+            lastName: appointmentDto.lastName,
+            phoneNumber: appointmentDto.phoneNumber,
+            sex: appointmentDto.sex,
+          },
+        });
+      }
 
       const appointment = await this.prisma.appointment.create({
         data: {
@@ -42,6 +69,7 @@ export class AppointmentService {
           createdAt: new Date(),
           updatedAt: new Date(),
           appointmentTimeSlotUid: appointmentDto.appointmentTimeSlotUid,
+          comment: appointmentDto.comment,
         },
       });
 
@@ -51,6 +79,7 @@ export class AppointmentService {
         appointmentDate: appointment.appointmentDate,
       };
     } catch (e) {
+      Logger.error('Failed to create appointment', e);
       if (e instanceof PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           throw new BadRequestException(
@@ -59,6 +88,33 @@ export class AppointmentService {
         }
       }
       throw new BadRequestException('Failed to create appointment.');
+    }
+  }
+
+  public async callPatient(callPatientDto: CallPatientDto) {
+    try {
+      const appointment = await this.prisma.appointmentManagement.upsert({
+        where: {
+          appointmentUid: callPatientDto.appointmentUid,
+        },
+        update: {
+          endDate: new Date(),
+        },
+        create: {
+          appointmentUid: callPatientDto.appointmentUid,
+          startDate: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        appointmentUid: appointment.appointmentUid,
+        startDate: appointment.startDate,
+        endDate: appointment.endDate,
+      };
+    } catch (error) {
+      Logger.error('Failed to call patient', error);
+      throw new BadRequestException('Failed to call patient.');
     }
   }
 
@@ -281,6 +337,7 @@ export class AppointmentService {
         include: {
           timeSlot: true,
           patient: true,
+          management: true,
         },
         orderBy: {
           appointmentDate: 'desc',

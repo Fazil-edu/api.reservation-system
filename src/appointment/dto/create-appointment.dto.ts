@@ -35,4 +35,8 @@ export class AppointmentDto {
   @IsNotEmpty()
   @IsString()
   appointmentTimeSlotUid: string;
+
+  @IsNotEmpty()
+  @IsString()
+  comment: string;
 }

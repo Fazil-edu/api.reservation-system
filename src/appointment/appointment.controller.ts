@@ -13,10 +13,16 @@ import { AppointmentDto } from './dto/create-appointment.dto';
 import { CreateTimeSlotDto } from './dto/create-time-slot.dto';
 import { UpdateTimeSlotDto } from './dto/update-time-slot.dto';
 import { PatientDto } from './dto/patient.dto';
+import { CallPatientDto } from './dto';
 
 @Controller('appointments')
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
+
+  @Get()
+  public async findAll() {
+    return await this.appointmentService.getTodayAppointments();
+  }
 
   @Get('count-for-today')
   public getTodayAppointmentSummary() {
@@ -33,6 +39,11 @@ export class AppointmentController {
     return await this.appointmentService.createAppointment(
       createAppointmentDto,
     );
+  }
+
+  @Post('call-patient')
+  public async callPatient(@Body() callPatientDto: CallPatientDto) {
+    return await this.appointmentService.callPatient(callPatientDto);
   }
 
   @Post('create-time-slot')

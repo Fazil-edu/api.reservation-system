@@ -1,3 +1,4 @@
+export * from './call-patient.dto';
 export * from './create-appointment.dto';
 export * from './create-time-slot.dto';
 export * from './patient.dto';
