@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { AppointmentDto } from './dto/create-appointment.dto';
@@ -14,11 +15,13 @@ import { CreateTimeSlotDto } from './dto/create-time-slot.dto';
 import { UpdateTimeSlotDto } from './dto/update-time-slot.dto';
 import { PatientDto } from './dto/patient.dto';
 import { CallPatientDto } from './dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 
 @Controller('appointments')
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   public async findAll() {
     return await this.appointmentService.getTodayAppointments();
@@ -41,6 +44,7 @@ export class AppointmentController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('call-patient')
   public async callPatient(@Body() callPatientDto: CallPatientDto) {
     return await this.appointmentService.callPatient(callPatientDto);

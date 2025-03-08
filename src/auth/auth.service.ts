@@ -2,17 +2,20 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { SignupDto, LoginDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async signup(dto: SignupDto) {
@@ -39,48 +42,66 @@ export class AuthService {
       },
     });
 
-    const token = this.jwtService.sign({
-      sub: user.uid,
-      email: user.email,
-    });
+    const authToken = this.jwtService.sign(
+      {
+        sub: user.uid,
+        email: user.username,
+      },
+      {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
+      },
+    );
 
     return {
-      token,
-      user: {
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
+      authToken,
     };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    try {
+      // Validate input
+      if (!dto.username || !dto.password) {
+        throw new UnauthorizedException('Username and password are required');
+      }
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      // Find the user by username
+      const user = await this.prisma.user.findUnique({
+        where: { username: dto.username },
+      });
+
+      // Check if the user exists
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      // Verify the password
+      const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      // Generate JWT token
+      const authToken = this.jwtService.sign(
+        {
+          sub: user.uid,
+          email: user.username,
+        },
+        {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
+        },
+      );
+
+      return {
+        authToken,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error; // Re-throw the UnauthorizedException
+      }
+
+      throw new InternalServerErrorException('An error occurred during login');
     }
-
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const token = this.jwtService.sign({
-      sub: user.uid,
-      email: user.email,
-    });
-
-    return {
-      token,
-      user: {
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
-    };
   }
 }
