@@ -73,10 +73,16 @@ export class AppointmentService {
         },
       });
 
+      const timSlotOrder = await this.prisma.appointmentTimeSlot.findFirst({
+        select: { appointmentOrder: true },
+        where: { uid: appointmentDto.appointmentTimeSlotUid },
+      });
+
       return {
         success: true,
         appointmentNumber: appointment.appointmentNumber,
         appointmentDate: appointment.appointmentDate,
+        appointmentOrder: timSlotOrder?.appointmentOrder || 0,
       };
     } catch (e) {
       Logger.error('Failed to create appointment', e);
