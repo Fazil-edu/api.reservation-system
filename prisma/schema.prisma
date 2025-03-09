@@ -68,7 +68,7 @@ model Patient {
   uid            String                 @id @default(uuid())
   firstName      String
   lastName       String
-  birthday       DateTime?
+  birthday       DateTime?              @db.Date()
   sex            String
   phoneNumber    String
   createdAt      DateTime               @default(now())

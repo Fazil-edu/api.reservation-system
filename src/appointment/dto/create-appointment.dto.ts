@@ -39,4 +39,8 @@ export class AppointmentDto {
   @IsNotEmpty()
   @IsString()
   comment: string;
+
+  @IsNotEmpty()
+  @IsString()
+  birthday: string;
 }

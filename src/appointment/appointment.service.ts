@@ -57,6 +57,7 @@ export class AppointmentService {
             lastName: appointmentDto.lastName,
             phoneNumber: appointmentDto.phoneNumber,
             sex: appointmentDto.sex,
+            birthday: new Date(appointmentDto.birthday),
           },
         });
       }
@@ -176,8 +177,20 @@ export class AppointmentService {
         (appointment) =>
           appointment.management?.startDate && !appointment.management?.endDate,
       );
-      const currentAppointmentOrder =
+      let currentAppointmentOrder =
         currentAppointment?.timeSlot?.appointmentOrder;
+
+      if (currentAppointmentOrder === undefined) {
+        currentAppointmentOrder = appointments
+          .sort(
+            (a, b) => b.timeSlot.appointmentOrder - a.timeSlot.appointmentOrder,
+          )
+          .find(
+            (appointment) =>
+              appointment.management?.startDate &&
+              appointment.management?.endDate,
+          )?.timeSlot.appointmentOrder;
+      }
 
       return {
         totalAppointments,
@@ -226,6 +239,10 @@ export class AppointmentService {
         .filter((uid) => uid !== null);
 
       // Fetch all time slots that are NOT in the booked slots list
+      const now = new Date(); // Get current date and time
+      const nowHours = now.getHours();
+      const nowMinutes = now.getMinutes();
+
       const availableTimeSlots = await this.prisma.appointmentTimeSlot.findMany(
         {
           where: {
@@ -236,9 +253,22 @@ export class AppointmentService {
         },
       );
 
+      // Filter time slots to include only those that are strictly after the current time
+      const filteredTimeSlots = availableTimeSlots.filter((slot) => {
+        const [slotHours, slotMinutes] = slot.appointmentHour
+          .split(':')
+          .map(Number); // Extract hours and minutes
+
+        // Compare hours first, then compare minutes if the hours are equal
+        return (
+          slotHours > nowHours ||
+          (slotHours === nowHours && slotMinutes > nowMinutes)
+        );
+      });
+
       return {
         success: true,
-        availableTimeSlots,
+        availableTimeSlots: filteredTimeSlots,
       };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
@@ -335,6 +365,10 @@ export class AppointmentService {
         throw new NotFoundException('Patient not found');
       }
 
+      const now = new Date();
+      const nowHours = now.getHours();
+      const nowMinutes = now.getMinutes();
+
       const appointment = await this.prisma.appointment.findMany({
         where: {
           patientUid: patientRecord.uid,
@@ -350,7 +384,23 @@ export class AppointmentService {
         },
       });
 
-      return appointment.map((appointment) => ({
+      // Filter appointments where the time slot is after the current time
+      const filteredAppointments = appointment.filter((appointment) => {
+        if (!appointment.timeSlot || !appointment.timeSlot.appointmentHour)
+          return false;
+
+        const [slotHours, slotMinutes] = appointment.timeSlot.appointmentHour
+          .split(':')
+          .map(Number);
+
+        return (
+          slotHours > nowHours ||
+          (slotHours === nowHours && slotMinutes > nowMinutes)
+        );
+      });
+
+      // Return filtered appointments
+      return filteredAppointments.map((appointment) => ({
         appointmentNumber: appointment.appointmentNumber,
         appointmentDate: appointment.appointmentDate,
         appointmentTimeSlot: appointment.timeSlot?.appointmentHour,
