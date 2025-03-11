@@ -242,6 +242,7 @@ export class AppointmentService {
       const now = new Date(); // Get current date and time
       const nowHours = now.getHours();
       const nowMinutes = now.getMinutes();
+      const today = now.toISOString().split('T')[0];
 
       const availableTimeSlots = await this.prisma.appointmentTimeSlot.findMany(
         {
@@ -259,11 +260,17 @@ export class AppointmentService {
           .split(':')
           .map(Number); // Extract hours and minutes
 
-        // Compare hours first, then compare minutes if the hours are equal
-        return (
-          slotHours > nowHours ||
-          (slotHours === nowHours && slotMinutes > nowMinutes)
-        );
+        // Check if the slot date matches today's date
+        if (today === date) {
+          // If it's today, apply the time filter
+          return (
+            slotHours > nowHours ||
+            (slotHours === nowHours && slotMinutes > nowMinutes)
+          );
+        }
+
+        // If it's not today, keep the slot
+        return true;
       });
 
       return {
