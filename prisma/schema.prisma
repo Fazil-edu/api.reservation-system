@@ -81,7 +81,7 @@ model Patient {
   socialNetworks PatientSocialNetwork[]
   diagnoses      PatientDiagnosis[]
 
-  @@unique([firstName, lastName, phoneNumber, sex, fatherName])
+  @@unique(fields: [firstName, lastName, phoneNumber, sex, fatherName], name: "patient")
   @@map("patients")
 }
 

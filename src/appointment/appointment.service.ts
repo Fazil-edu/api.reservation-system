@@ -367,6 +367,8 @@ export class AppointmentService {
           phoneNumber: patient.phoneNumber,
           firstName: patient.firstName,
           lastName: patient.lastName,
+          birthday: new Date(patient.birthday),
+          fatherName: patient.fatherName,
         },
       });
 
@@ -375,13 +377,23 @@ export class AppointmentService {
       }
 
       const now = new Date();
-      const nowHours = now.getHours();
-      const nowMinutes = now.getMinutes();
+      const startOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
 
       const appointment = await this.prisma.appointment.findMany({
         where: {
           patientUid: patientRecord.uid,
           deletedAt: null,
+          appointmentDate: {
+            gte: startOfToday,
+          },
         },
         include: {
           timeSlot: true,
@@ -392,21 +404,10 @@ export class AppointmentService {
           appointmentDate: 'desc',
         },
       });
-
       // Filter appointments where the time slot is after the current time
-      const filteredAppointments = appointment.filter((appointment) => {
-        if (!appointment.timeSlot || !appointment.timeSlot.appointmentHour)
-          return false;
-
-        const [slotHours, slotMinutes] = appointment.timeSlot.appointmentHour
-          .split(':')
-          .map(Number);
-
-        return (
-          slotHours > nowHours ||
-          (slotHours === nowHours && slotMinutes > nowMinutes)
-        );
-      });
+      const filteredAppointments = appointment.filter(
+        (appointment) => !appointment.management?.startDate,
+      );
 
       // Return filtered appointments
       return filteredAppointments.map((appointment) => ({
@@ -416,6 +417,7 @@ export class AppointmentService {
         id: appointment.id,
       }));
     } catch (error) {
+      Logger.error(error);
       if (error instanceof NotFoundException) {
         throw error;
       }
