@@ -43,4 +43,8 @@ export class AppointmentDto {
   @IsNotEmpty()
   @IsString()
   birthday: string;
+
+  @IsNotEmpty()
+  @IsString()
+  fatherName: string;
 }

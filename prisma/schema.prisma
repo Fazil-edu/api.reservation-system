@@ -65,21 +65,23 @@ model AppointmentTimeSlot {
 }
 
 model Patient {
-  uid            String                 @id @default(uuid())
-  firstName      String
-  lastName       String
-  birthday       DateTime?              @db.Date()
-  sex            String
-  phoneNumber    String
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  deletedAt      DateTime?              @map("deleted_at")
+  uid         String    @id @default(uuid())
+  firstName   String    @db.VarChar(100)
+  lastName    String    @db.VarChar(100)
+  fatherName  String    @db.VarChar(100)
+  sex         String    @db.VarChar(10)
+  phoneNumber String    @db.VarChar(20)
+  birthday    DateTime? @db.Date()
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? @map("deleted_at")
+
   appointments   Appointment[]
   details        PatientDetails?
   socialNetworks PatientSocialNetwork[]
   diagnoses      PatientDiagnosis[]
 
-  @@unique([firstName, lastName, phoneNumber, sex])
+  @@unique([firstName, lastName, phoneNumber, sex, fatherName])
   @@map("patients")
 }
 

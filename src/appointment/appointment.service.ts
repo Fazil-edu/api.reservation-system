@@ -46,6 +46,7 @@ export class AppointmentService {
           sex: appointmentDto.sex,
           firstName: appointmentDto.firstName,
           lastName: appointmentDto.lastName,
+          fatherName: appointmentDto.fatherName,
         },
       });
 
@@ -58,6 +59,7 @@ export class AppointmentService {
             phoneNumber: appointmentDto.phoneNumber,
             sex: appointmentDto.sex,
             birthday: new Date(appointmentDto.birthday),
+            fatherName: appointmentDto.fatherName,
           },
         });
       }

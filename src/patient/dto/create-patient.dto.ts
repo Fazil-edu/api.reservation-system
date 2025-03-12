@@ -16,4 +16,8 @@ export class CreatePatientDto {
   @IsNotEmpty()
   @IsString()
   phoneNumber: string;
+
+  @IsNotEmpty()
+  @IsString()
+  fatherName: string;
 }

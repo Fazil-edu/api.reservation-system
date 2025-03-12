@@ -5,4 +5,5 @@ export class PatientDto extends OmitType(AppointmentDto, [
   'appointmentDate',
   'appointmentTimeSlotUid',
   'sex',
+  'fatherName',
 ] as const) {}
