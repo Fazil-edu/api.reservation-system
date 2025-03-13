@@ -19,11 +19,28 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 export class AppointmentService {
   constructor(private prisma: PrismaService) {}
 
-  public async getTodayAppointments() {
+  public async getAppointmentByDate(date: string) {
+    const [day, month, year] = date.split('.').map(Number);
+    const parsedDate = new Date(year, month - 1, day);
+
+    if (isNaN(parsedDate.getTime())) {
+      throw new BadRequestException('Invalid date format. Expected DD.MM.YYYY');
+    }
+
+    // Adjust to query only the DATE part
+    const startOfDay = new Date(parsedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(parsedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     try {
       const appointments = await this.prisma.appointment.findMany({
         where: {
-          appointmentDate: new Date(new Date().toISOString().split('T')[0]),
+          appointmentDate: {
+            gte: startOfDay, // Start of the given day
+            lte: endOfDay, // End of the given day
+          },
         },
         include: {
           patient: true,
@@ -31,9 +48,10 @@ export class AppointmentService {
           management: true,
         },
       });
+
       return appointments;
     } catch (error) {
-      Logger.error('Failed to fetch today appointments', error);
+      Logger.error('Failed to fetch appointments', error);
       throw new InternalServerErrorException('Failed to fetch appointments');
     }
   }

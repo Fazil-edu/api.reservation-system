@@ -22,9 +22,9 @@ export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get()
-  public async findAll() {
-    return await this.appointmentService.getTodayAppointments();
+  @Get('by-date/:date')
+  public async getAppointmentByDate(@Param('date') date: string) {
+    return await this.appointmentService.getAppointmentByDate(date);
   }
 
   @Get('count-for-today')
