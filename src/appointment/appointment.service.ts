@@ -90,6 +90,7 @@ export class AppointmentService {
           createdAt: new Date(),
           updatedAt: new Date(),
           appointmentTimeSlotUid: appointmentDto.appointmentTimeSlotUid,
+          isNewPatient: appointmentDto.isNewPatient,
           comment: appointmentDto.comment,
         },
       });

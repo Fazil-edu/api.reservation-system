@@ -30,6 +30,7 @@ model Appointment {
   comment                String?
   patientUid             String                 @map("patient_uid")
   deletedAt              DateTime?              @map("deleted_at")
+  isNewPatient           Boolean?
   management             AppointmentManagement?
   timeSlot               AppointmentTimeSlot    @relation(fields: [appointmentTimeSlotUid], references: [uid])
   appointmentTimeSlotUid String

@@ -4,6 +4,7 @@ import {
   IsPhoneNumber,
   IsEnum,
   IsNotEmpty,
+  IsBoolean,
 } from 'class-validator';
 
 enum Gender {
@@ -47,4 +48,7 @@ export class AppointmentDto {
   @IsNotEmpty()
   @IsString()
   fatherName: string;
+
+  @IsBoolean()
+  isNewPatient?: boolean;
 }
