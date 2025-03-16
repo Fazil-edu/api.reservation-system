@@ -299,6 +299,7 @@ export class AppointmentService {
         availableTimeSlots: filteredTimeSlots,
         today: today,
         date: date,
+        time: new Date().toISOString().split('T')[1],
       };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
