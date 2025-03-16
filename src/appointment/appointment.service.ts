@@ -286,7 +286,7 @@ export class AppointmentService {
           // If it's today, apply the time filter
           return (
             slotHours > nowHours + 1 ||
-            (slotHours === nowHours && slotMinutes > nowMinutes + 1)
+            (slotHours === nowHours + 1 && slotMinutes > nowMinutes + 1)
           );
         }
 
