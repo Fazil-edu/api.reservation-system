@@ -297,6 +297,8 @@ export class AppointmentService {
       return {
         success: true,
         availableTimeSlots: filteredTimeSlots,
+        today: today,
+        date: date,
       };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
