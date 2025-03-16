@@ -285,8 +285,8 @@ export class AppointmentService {
         if (today === date) {
           // If it's today, apply the time filter
           return (
-            slotHours > nowHours ||
-            (slotHours === nowHours && slotMinutes > nowMinutes)
+            slotHours > nowHours + 1 ||
+            (slotHours === nowHours && slotMinutes > nowMinutes + 1)
           );
         }
 
@@ -297,9 +297,6 @@ export class AppointmentService {
       return {
         success: true,
         availableTimeSlots: filteredTimeSlots,
-        today: today,
-        date: date,
-        time: new Date().toISOString().split('T')[1],
       };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
