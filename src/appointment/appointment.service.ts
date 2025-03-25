@@ -60,7 +60,6 @@ export class AppointmentService {
     try {
       let patient = await this.prisma.patient.findFirst({
         where: {
-          phoneNumber: appointmentDto.phoneNumber,
           sex: appointmentDto.sex,
           firstName: appointmentDto.firstName,
           lastName: appointmentDto.lastName,
@@ -74,7 +73,6 @@ export class AppointmentService {
           data: {
             firstName: appointmentDto.firstName,
             lastName: appointmentDto.lastName,
-            phoneNumber: appointmentDto.phoneNumber,
             sex: appointmentDto.sex,
             birthday: new Date(appointmentDto.birthday),
             fatherName: appointmentDto.fatherName,
@@ -383,7 +381,6 @@ export class AppointmentService {
     try {
       const patientRecord = await this.prisma.patient.findFirst({
         where: {
-          phoneNumber: patient.phoneNumber,
           firstName: patient.firstName,
           lastName: patient.lastName,
           birthday: new Date(patient.birthday),
