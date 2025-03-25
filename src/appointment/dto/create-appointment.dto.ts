@@ -1,7 +1,6 @@
 import {
   IsString,
   IsDate,
-  IsPhoneNumber,
   IsEnum,
   IsNotEmpty,
   IsBoolean,
@@ -24,10 +23,6 @@ export class AppointmentDto {
   @IsNotEmpty()
   @IsString()
   lastName: string;
-
-  @IsNotEmpty()
-  @IsPhoneNumber()
-  phoneNumber: string;
 
   @IsNotEmpty()
   @IsEnum(Gender)
