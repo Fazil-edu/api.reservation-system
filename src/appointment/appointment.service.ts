@@ -80,6 +80,25 @@ export class AppointmentService {
         });
       }
 
+      const appointmentDate = new Date(appointmentDto.appointmentDate);
+
+      // Check if the patient already has 2 appointments for the same day
+      const existingAppointmentsCount = await this.prisma.appointment.count({
+        where: {
+          patientUid: patient.uid,
+          appointmentDate: {
+            gte: new Date(appointmentDate.setHours(0, 0, 0, 0)),
+            lt: new Date(appointmentDate.setHours(24, 0, 0, 0)),
+          },
+        },
+      });
+
+      if (existingAppointmentsCount >= 2) {
+        throw new BadRequestException(
+          'A patient can only book up to 2 appointments per day.',
+        );
+      }
+
       const appointment = await this.prisma.appointment.create({
         data: {
           appointmentDate: new Date(appointmentDto.appointmentDate),
